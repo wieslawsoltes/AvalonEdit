@@ -30,11 +30,23 @@ namespace ICSharpCode.AvalonEdit.Utils
 	/// </summary>
 	static class Win32
 	{
+#if LIBREWPF
+		static bool IsNativeCaretAvailable {
+			get { return OperatingSystem.IsWindows(); }
+		}
+#else
+		const bool IsNativeCaretAvailable = true;
+#endif
+
 		/// <summary>
 		/// Gets the caret blink time.
 		/// </summary>
 		public static TimeSpan CaretBlinkTime {
-			get { return TimeSpan.FromMilliseconds(SafeNativeMethods.GetCaretBlinkTime()); }
+			get {
+				if (!IsNativeCaretAvailable)
+					return TimeSpan.FromMilliseconds(500);
+				return TimeSpan.FromMilliseconds(SafeNativeMethods.GetCaretBlinkTime());
+			}
 		}
 		
 		/// <summary>
@@ -44,6 +56,8 @@ namespace ICSharpCode.AvalonEdit.Utils
 		{
 			if (owner == null)
 				throw new ArgumentNullException("owner");
+			if (!IsNativeCaretAvailable)
+				return false;
 			HwndSource source = PresentationSource.FromVisual(owner) as HwndSource;
 			if (source != null) {
 				Vector r = owner.PointToScreen(new Point(size.Width, size.Height)) - owner.PointToScreen(new Point(0, 0));
@@ -60,6 +74,8 @@ namespace ICSharpCode.AvalonEdit.Utils
 		{
 			if (owner == null)
 				throw new ArgumentNullException("owner");
+			if (!IsNativeCaretAvailable)
+				return false;
 			HwndSource source = PresentationSource.FromVisual(owner) as HwndSource;
 			if (source != null) {
 				Point pointOnRootVisual = owner.TransformToAncestor(source.RootVisual).Transform(position);
@@ -75,6 +91,8 @@ namespace ICSharpCode.AvalonEdit.Utils
 		/// </summary>
 		public static bool DestroyCaret()
 		{
+			if (!IsNativeCaretAvailable)
+				return true;
 			return SafeNativeMethods.DestroyCaret();
 		}
 		

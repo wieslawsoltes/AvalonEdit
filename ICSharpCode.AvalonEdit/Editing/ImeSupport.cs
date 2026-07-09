@@ -44,6 +44,14 @@ namespace ICSharpCode.AvalonEdit.Editing
 		HwndSource hwndSource;
 		EventHandler requerySuggestedHandler; // we need to keep the event handler instance alive because CommandManager.RequerySuggested uses weak references
 		bool isReadOnly;
+
+#if LIBREWPF
+		static bool IsNativeImeAvailable {
+			get { return OperatingSystem.IsWindows(); }
+		}
+#else
+		const bool IsNativeImeAvailable = true;
+#endif
 		
 		public ImeSupport(TextArea textArea)
 		{
@@ -74,11 +82,15 @@ namespace ICSharpCode.AvalonEdit.Editing
 		
 		public void OnGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
 		{
+			if (!IsNativeImeAvailable)
+				return;
 			UpdateImeEnabled();
 		}
 		
 		public void OnLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
 		{
+			if (!IsNativeImeAvailable)
+				return;
 			if (e.OldFocus == textArea && currentContext != IntPtr.Zero)
 				ImeNativeWrapper.NotifyIme(currentContext);
 			ClearContext();
@@ -86,6 +98,8 @@ namespace ICSharpCode.AvalonEdit.Editing
 		
 		void UpdateImeEnabled()
 		{
+			if (!IsNativeImeAvailable)
+				return;
 			if (textArea.Options.EnableImeSupport && textArea.IsKeyboardFocused) {
 				bool newReadOnly = !textArea.ReadOnlySectionProvider.CanInsert(textArea.Caret.Offset);
 				if (hwndSource == null || isReadOnly != newReadOnly) {
@@ -156,6 +170,8 @@ namespace ICSharpCode.AvalonEdit.Editing
 		
 		public void UpdateCompositionWindow()
 		{
+			if (!IsNativeImeAvailable)
+				return;
 			if (currentContext != IntPtr.Zero) {
 				ImeNativeWrapper.SetCompositionFont(hwndSource, currentContext, textArea);
 				ImeNativeWrapper.SetCompositionWindow(hwndSource, currentContext, textArea);
